@@ -1,14 +1,10 @@
-import express from "express";
+const express = require('express');
 const app = express();
 
 const port = process.env.WEBSITES_PORT || process.env.PORT || 8080;
+const databaseUrl = process.env.DATABASE_URL;
 
-app.get("/", (req, res) => {
-  res.send("Hello from Docker image pushed to ACR!");
-});
 
-app.listen(port, () => {
-  console.log(`Server listening on ${port}`);
-});
- 
-// test för uppgift 2
+
+app.get('/health', (req, res) => res.json({ ok: true }));
+app.listen(port, () => console.log(`Server listening on ${port}`));
