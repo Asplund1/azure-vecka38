@@ -8,3 +8,4 @@ const databaseUrl = process.env.DATABASE_URL;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 app.listen(port, () => console.log(`Server listening on ${port}`));
+//trigger för dev test
