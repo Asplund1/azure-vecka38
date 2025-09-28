@@ -16,7 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-
       - name: Login to ACR
         uses: docker/login-action@v3
         with:
@@ -24,6 +23,10 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      # Skapa en kort commit-SHA som tagg
+      - name: Compute tag
+        id: meta
+        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       # Bygg image med två taggar: latest och commit-SHA
       - name: Build image
