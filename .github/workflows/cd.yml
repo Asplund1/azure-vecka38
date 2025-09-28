@@ -1,0 +1,21 @@
+name: CD (deploy to Azure Web App)
+
+on:
+  push:
+    branches: [ "main" ]   # deploya varje gång du pushar till main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Deploya container-imagen till App Service
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "andreas-webapp"  # <-- exakt ditt App Service-namn
+          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+          images: "${{ secrets.ACR_URL }}/andreas-app:latest"
