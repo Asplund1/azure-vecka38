@@ -1,41 +1,71 @@
-name: CI (build & push to ACR)
+name: CI (parallell test + build)
 
 on:
   push:
-    branches: 
-    - "main"
+    branches: [ "main" ]
   pull_request:
 
 env:
-  IMAGE_NAME: andreas-app
+  IMAGE_NAME: andreas-app  # byt om du vill
 
 jobs:
-  build_and_push:
+  test:
+    name: Test
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node-cache via setup-node (snabbare npm ci)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # Kör tester om script finns, annars hoppar den över
+      - name: Run tests
+        run: npm test --if-present
+
+  build_and_push:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    # OBS: Inga "needs" här. Jobben kör parallellt.
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Node-cache används även i build-steget om du bygger innan docker
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
       - name: Login to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.ACR_URL }}
+          registry: ${{ secrets.ACR_URL }}         # ex acrandreas.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      # Skapa en kort commit-SHA som tagg
+      # Bygg och tagga både latest och kort SHA
       - name: Compute tag
         id: meta
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      # Bygg image med två taggar: latest och commit-SHA
       - name: Build image
         run: |
           docker build -t ${{ secrets.ACR_URL }}/${{ env.IMAGE_NAME }}:latest \
                        -t ${{ secrets.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.TAG }} .
 
-      # Pusha båda taggarna till ACR
       - name: Push image
         run: |
           docker push ${{ secrets.ACR_URL }}/${{ env.IMAGE_NAME }}:latest
